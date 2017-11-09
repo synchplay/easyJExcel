@@ -132,11 +132,12 @@ public abstract class AbstractGenericPoiExcelConverter implements ExcelConverter
 		Class<?> fieldType = field.getType();
 
 		ExcelCell annotation = field.getAnnotation(ExcelCell.class);
-		if (annotation.enumClass() != null && annotation.enumClass().isEnum()) {
+		if (annotation.enumClass() != null && annotation.enumClass() != void.class
+				&& annotation.enumClass().isEnum() && !fieldType.isEnum()) {
 			ExcelEnum<?>[] enumArr = (ExcelEnum<?>[]) annotation.enumClass().getEnumConstants();
 			for (ExcelEnum<?> excelEnum : enumArr) {
-				if (excelEnum.excelName().equals(value)) {
-					field.set(entity, excelEnum);
+				if (excelEnum.excelName().equalsIgnoreCase(value.trim())) {
+					field.set(entity, excelEnum.excelValue());
 					break;
 				}
 			}
@@ -161,11 +162,21 @@ public abstract class AbstractGenericPoiExcelConverter implements ExcelConverter
 		} else if (Character.TYPE == fieldType) {
 			field.set(entity, value.charAt(0));
 		} else if (fieldType.isEnum()) {
-			ExcelEnum<?>[] enumArr = (ExcelEnum<?>[]) fieldType.getEnumConstants();
-			for (ExcelEnum<?> excelEnum : enumArr) {
-				if (excelEnum.excelName().equals(value)) {
-					field.set(entity, excelEnum);
-					break;
+			if (!ExcelEnum.class.isAssignableFrom(fieldType)) {
+				Enum<?>[] enumArr = (Enum<?>[]) fieldType.getEnumConstants();
+				for (Enum<?> enumObj : enumArr) {
+					if (enumObj.name().equalsIgnoreCase(value.trim())) {
+						field.set(entity, enumObj);
+						break;
+					}
+				}
+			} else {
+				ExcelEnum<?>[] enumArr = (ExcelEnum<?>[]) fieldType.getEnumConstants();
+				for (ExcelEnum<?> excelEnum : enumArr) {
+					if (excelEnum.excelName().equalsIgnoreCase(value.trim())) {
+						field.set(entity, excelEnum);
+						break;
+					}
 				}
 			}
 		}
@@ -300,9 +311,14 @@ public abstract class AbstractGenericPoiExcelConverter implements ExcelConverter
 			return "";
 		}
 
-		if (o instanceof ExcelEnum) {
-			return ((ExcelEnum<?>) o).excelName();
-		} else if (annotation.enumClass() != null && annotation.enumClass().isEnum()) {
+		if (field.getType().isEnum()) {
+			if (o instanceof ExcelEnum) {
+				return ((ExcelEnum<?>) o).excelName();
+			} else {
+				return ((Enum<?>) o).name();
+			}
+		} else if (annotation.enumClass() != null && annotation.enumClass() != void.class
+				&& annotation.enumClass().isEnum()) {
 			ExcelEnum<?>[] enumArr = (ExcelEnum<?>[]) annotation.enumClass().getEnumConstants();
 			for (ExcelEnum<?> excelEnum : enumArr) {
 				if (excelEnum.excelValue().equals(o)) {

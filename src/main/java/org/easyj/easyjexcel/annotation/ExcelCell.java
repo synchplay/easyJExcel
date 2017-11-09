@@ -37,7 +37,7 @@ public @interface ExcelCell {
 	boolean isMark() default false;
 
 	/**
-	 * @return 枚举类
+	 * @return 枚举类，枚举类必须继承 ExcelEnum
 	 */
 	Class<?> enumClass() default void.class;
 
